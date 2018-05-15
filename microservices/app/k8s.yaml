@@ -1,0 +1,71 @@
+apiVersion: v1
+items:
+- apiVersion: extensions/v1beta1
+  kind: Deployment
+  metadata:
+    creationTimestamp: null
+    labels:
+      app: app
+      hasuraService: custom
+    name: app
+    namespace: '{{ cluster.metadata.namespaces.user }}'
+  spec:
+    replicas: 1
+    strategy: {}
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: app
+      spec:
+        containers:
+        - image: hasura/base-git-image:0.7
+          imagePullPolicy: IfNotPresent
+          name: app
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          env:
+          - name: POSTGRES_HOSTNAME
+            value: postgres.{{ cluster.metadata.namespaces.hasura }}
+          - name: POSTGRES_PORT
+            value: "5432"
+          - name: POSTGRES_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: hasura-secrets
+                key: postgres.user
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: hasura-secrets
+                key: postgres.password
+          - name: RAILS_ENV
+            value: production
+          - name: SECRET_KEY_BASE
+            value: 758373a5cf6108b9364718d07442c37af2111dfb4c71141805baa5c11849ef7632685ec90aaf5966b4effd7b1f86c8858db3e788bec52b9bafda067f4499ae54
+          resources: {}
+        securityContext: {}
+        terminationGracePeriodSeconds: 0
+  status: {}
+- apiVersion: v1
+  kind: Service
+  metadata:
+    creationTimestamp: null
+    labels:
+      app: app
+      hasuraService: custom
+    name: app
+    namespace: '{{ cluster.metadata.namespaces.user }}'
+  spec:
+    ports:
+    - port: 80
+      protocol: TCP
+      targetPort: 8080
+    selector:
+      app: app
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+kind: List
+metadata: {}
